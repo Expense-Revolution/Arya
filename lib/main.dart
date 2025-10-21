@@ -1,10 +1,10 @@
 // main.dart - entrypoint
 import 'package:flutter/material.dart';
-import 'package:sms_expense_tracker/screens/home_screen.dart';
-import 'package:sms_expense_tracker/db/hive_helper.dart';
-import 'package:sms_expense_tracker/services/background_service.dart';
-import 'package:sms_expense_tracker/services/settings_manager.dart';
-import 'package:sms_expense_tracker/services/notification_service.dart';
+import 'package:arya/screens/home_screen.dart';
+import 'package:arya/db/hive_helper.dart';
+import 'package:arya/services/background_service.dart';
+import 'package:arya/services/settings_manager.dart';
+import 'package:arya/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
