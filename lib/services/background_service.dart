@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:another_telephony/telephony.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../db/hive_helper.dart';
 import 'sms_parser.dart';
 import 'settings_manager.dart';
@@ -19,19 +21,33 @@ class BackgroundSmsService {
       return;
     }
 
-    final telephony = Telephony.instance;
-    final granted = await telephony.requestSmsPermissions ?? false;
-    if (!granted) {
-      debugPrint('$_tag: SMS permissions not granted');
+    // The Telephony plugin only works on Android. Skip initialization on other platforms.
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      debugPrint(
+        '$_tag: Telephony plugin not available on this platform; skipping SMS background registration',
+      );
       return;
     }
 
-    // Register background handler
-    telephony.listenIncomingSms(
-      onNewMessage: _handleNewSms,
-      onBackgroundMessage: backgroundMessageHandler,
-      listenInBackground: true,
-    );
+    try {
+      final telephony = Telephony.instance;
+      final granted = await telephony.requestSmsPermissions ?? false;
+      if (!granted) {
+        debugPrint('$_tag: SMS permissions not granted');
+        return;
+      }
+
+      // Register background handler
+      telephony.listenIncomingSms(
+        onNewMessage: _handleNewSms,
+        onBackgroundMessage: backgroundMessageHandler,
+        listenInBackground: true,
+      );
+    } on MissingPluginException catch (e) {
+      debugPrint('$_tag: Telephony plugin missing on this platform: $e');
+    } catch (e) {
+      debugPrint('$_tag: Error initializing Telephony: $e');
+    }
   }
 
   static Future<void> _handleNewSms(SmsMessage message) async {

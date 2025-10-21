@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/settings_manager.dart';
 import '../services/background_service.dart';
@@ -19,7 +20,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _backgroundServiceEnabled = SettingsManager.isBackgroundServiceEnabled();
-    _checkBatteryOptimization();
+    // Only check battery optimization on Android
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      _checkBatteryOptimization();
+    }
   }
 
   Future<void> _checkBatteryOptimization() async {
@@ -40,7 +44,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            if (_backgroundServiceEnabled)
+            // Show battery optimization controls only on Android when background is enabled
+            if (_backgroundServiceEnabled &&
+                !kIsWeb &&
+                defaultTargetPlatform == TargetPlatform.android)
               ListTile(
                 title: const Text('Battery Optimization'),
                 subtitle: Text(
@@ -87,7 +94,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _backgroundServiceEnabled = value;
                 });
-                if (value) {
+                // Only initialize background service on Android
+                if (value &&
+                    !kIsWeb &&
+                    defaultTargetPlatform == TargetPlatform.android) {
                   await BackgroundSmsService.initialize();
                 }
                 if (!mounted) return;

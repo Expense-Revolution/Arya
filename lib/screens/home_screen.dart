@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 import '../db/hive_helper.dart';
 import '../models/transaction_item.dart';
 import '../services/sms_service.dart';
@@ -16,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final SmsService _smsService = SmsService();
+  late final bool _isAndroid;
   List<TransactionItem> _transactions = [];
   DateTime _shownMonth = DateTime.now();
   final StreamController<void> _refreshCtrl = StreamController.broadcast();
@@ -25,15 +27,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _load();
-    // Start SMS service and subscribe to parsed transactions
-    _smsService.startListening();
-    _smsSub = _smsService.onTransaction.listen((t) {
-      // insert into current list in-memory for immediate UI update
-      setState(() {
-        _transactions.insert(0, t);
+    // Determine platform at runtime and only activate SMS features on Android
+    _isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    if (_isAndroid) {
+      // Start SMS service and subscribe to parsed transactions
+      _smsService.startListening();
+      _smsSub = _smsService.onTransaction.listen((t) {
+        // insert into current list in-memory for immediate UI update
+        setState(() {
+          _transactions.insert(0, t);
+        });
+        _refreshCtrl.add(null);
       });
-      _refreshCtrl.add(null);
-    });
+    }
   }
 
   Future<void> _load() async {
@@ -154,7 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _refreshCtrl.close();
     _smsSub?.cancel();
-    _smsService.stop();
+    if (_isAndroid) {
+      _smsService.stop();
+    }
     super.dispose();
   }
 
@@ -192,6 +200,28 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
+          // On non-Android platforms, show a hint explaining manual-add flow
+          if (!_isAndroid)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Card(
+                color: Colors.blue.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.info_outline, color: Colors.blue),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'SMS parsing is available on Android. On this platform you can add expenses manually using the + button.',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Card(
             margin: const EdgeInsets.all(12),
             child: Padding(
@@ -350,37 +380,46 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Scan inbox FAB (mini)
-          Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: FloatingActionButton.small(
-              heroTag: 'scan_sms',
-              onPressed: () async {
-                if (!mounted) return;
-                final messenger = ScaffoldMessenger.of(context);
-                final added = await _smsService.scanInbox();
-                if (added > 0) {
-                  // reload from DB to ensure ordering
+          // Scan inbox FAB (mini) - only on Android where SMS access exists
+          if (_isAndroid)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: FloatingActionButton.small(
+                heroTag: 'scan_sms',
+                onPressed: () async {
                   if (!mounted) return;
-                  await _load();
-                }
-                if (!mounted) return;
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Scan finished, $added new transactions added',
+                  final messenger = ScaffoldMessenger.of(context);
+                  final added = await _smsService.scanInbox();
+                  if (added > 0) {
+                    // reload from DB to ensure ordering
+                    if (!mounted) return;
+                    await _load();
+                  }
+                  if (!mounted) return;
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Scan finished, $added new transactions added',
+                      ),
                     ),
-                  ),
-                );
-              },
-              tooltip: 'Scan SMS inbox',
-              child: const Icon(Icons.refresh),
+                  );
+                },
+                tooltip: 'Scan SMS inbox',
+                child: const Icon(Icons.refresh),
+              ),
             ),
-          ),
-          FloatingActionButton(
-            onPressed: _addManual,
-            child: const Icon(Icons.add),
-          ),
+          // Use an extended FAB on non-Android platforms for better discoverability
+          if (!_isAndroid)
+            FloatingActionButton.extended(
+              onPressed: _addManual,
+              icon: const Icon(Icons.add),
+              label: const Text('Add transaction'),
+            )
+          else
+            FloatingActionButton(
+              onPressed: _addManual,
+              child: const Icon(Icons.add),
+            ),
         ],
       ),
     );

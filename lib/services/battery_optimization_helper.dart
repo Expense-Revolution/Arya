@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class BatteryOptimizationHelper {
   static Future<bool> requestDisableBatteryOptimization() async {
+    // Only applicable on Android
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
     final deviceInfo = await DeviceInfoPlugin().androidInfo;
 
     // Only applicable for Android 6.0 (API 23) and above
@@ -25,6 +28,8 @@ class BatteryOptimizationHelper {
   }
 
   static Future<bool> isBatteryOptimizationDisabled() async {
+    // Only applicable on Android
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
     final deviceInfo = await DeviceInfoPlugin().androidInfo;
 
     // Only applicable for Android 6.0 (API 23) and above

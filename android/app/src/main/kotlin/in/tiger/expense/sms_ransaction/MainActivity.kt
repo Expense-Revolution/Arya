@@ -1,4 +1,4 @@
-package `in`.tiger.expense.sms_ransaction
+package `in`.tiger.expense.arya
 
 import io.flutter.embedding.android.FlutterActivity
 
