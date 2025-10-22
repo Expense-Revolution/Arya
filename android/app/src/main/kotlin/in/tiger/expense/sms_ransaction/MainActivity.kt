@@ -1,4 +1,4 @@
-package `in`.tiger.expense.arya
+package `in`.tiger.expense.koshik
 
 import io.flutter.embedding.android.FlutterActivity
 

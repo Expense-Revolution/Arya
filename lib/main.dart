@@ -1,10 +1,10 @@
 // main.dart - entrypoint
 import 'package:flutter/material.dart';
-import 'package:arya/screens/home_screen.dart';
-import 'package:arya/db/hive_helper.dart';
-import 'package:arya/services/background_service.dart';
-import 'package:arya/services/settings_manager.dart';
-import 'package:arya/services/notification_service.dart';
+import 'package:koshik/screens/home_screen.dart';
+import 'package:koshik/db/hive_helper.dart';
+import 'package:koshik/services/background_service.dart';
+import 'package:koshik/services/settings_manager.dart';
+import 'package:koshik/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SMS Expense Tracker',
+      title: 'Koshik: Smart Hisāb',
       theme: ThemeData(primarySwatch: Colors.teal),
       home: const HomeScreen(),
     );

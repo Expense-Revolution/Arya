@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "in.tiger.expense" "\0"
-            VALUE "FileDescription", "arya" "\0"
+            VALUE "FileDescription", "koshik" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "arya" "\0"
+            VALUE "InternalName", "koshik" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 in.tiger.expense. All rights reserved." "\0"
-            VALUE "OriginalFilename", "arya.exe" "\0"
-            VALUE "ProductName", "arya" "\0"
+            VALUE "OriginalFilename", "koshik.exe" "\0"
+            VALUE "ProductName", "koshik" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
