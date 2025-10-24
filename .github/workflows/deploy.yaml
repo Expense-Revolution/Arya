@@ -11,8 +11,19 @@ jobs:
 
         steps:
             # 1️⃣ Checkout the source code
-            - name: Checkout source code
-              uses: actions/checkout@v3
+            - name: Checkout repo
+              uses: actions/checkout@v5
+
+            - name: Set up Flutter
+              uses: subosito/flutter-action@v2
+              with:
+                  flutter-version: "stable"
+
+            - name: Install dependencies
+              run: flutter pub get
+
+            - name: Build Flutter web
+              run: flutter build web
 
             # 2️⃣ Set up Flutter
             - name: Set up Flutter
