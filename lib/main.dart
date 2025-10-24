@@ -10,7 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize storage, settings and notifications
-  await HiveHelper.init();
+  await HiveHelper.init(enableEncryption: true);
   await SettingsManager.init();
   await NotificationService.initialize();
 

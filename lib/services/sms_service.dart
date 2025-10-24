@@ -43,6 +43,7 @@ class SmsService {
           }
         }
       },
+      listenInBackground: false,
       onBackgroundMessage: null,
     );
 

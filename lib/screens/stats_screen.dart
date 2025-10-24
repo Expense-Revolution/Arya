@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:share_plus/share_plus.dart';
 // import 'package:intl/intl.dart';
 import '../db/hive_helper.dart';
 // import '../models/transaction_item.dart';
@@ -82,6 +83,34 @@ class _StatsScreenState extends State<StatsScreen> {
           IconButton(
             icon: const Icon(Icons.delete_outline),
             onPressed: () => _showDeleteConfirmation(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Export & share CSV',
+            onPressed: () async {
+              final scaffold = ScaffoldMessenger.of(context);
+              scaffold.showSnackBar(
+                const SnackBar(content: Text('Preparing export...')),
+              );
+              final path = await HiveHelper.exportTransactionsCsv();
+              if (path == null) {
+                scaffold.showSnackBar(
+                  const SnackBar(content: Text('Failed to create export')),
+                );
+                return;
+              }
+              try {
+                // shareXFiles is deprecated in newer versions; keep a short ignore to preserve behavior
+                // ignore: deprecated_member_use
+                await Share.shareXFiles([
+                  XFile(path),
+                ], text: 'Transactions export');
+              } catch (e) {
+                scaffold.showSnackBar(
+                  const SnackBar(content: Text('Share failed')),
+                );
+              }
+            },
           ),
         ],
       ),
