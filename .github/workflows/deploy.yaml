@@ -14,22 +14,11 @@ jobs:
             - name: Checkout repo
               uses: actions/checkout@v5
 
-            - name: Set up Flutter
-              uses: subosito/flutter-action@v2
-              with:
-                  flutter-version: "3.35.6"
-
-            - name: Install dependencies
-              run: flutter pub get
-
-            - name: Build Flutter web
-              run: flutter build web
-
             # 2️⃣ Set up Flutter
             - name: Set up Flutter
               uses: subosito/flutter-action@v2
               with:
-                  flutter-version: stable
+                  flutter-version: "3.35.6"
 
             # 3️⃣ Install dependencies
             - name: Install dependencies
