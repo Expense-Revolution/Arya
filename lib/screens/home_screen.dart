@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+
+// 🟢 deferred imports (load only when needed)
+import 'stats_screen.dart' deferred as stats;
+import 'settings_screen.dart' deferred as settings;
+
 import '../db/hive_helper.dart';
 import '../models/transaction_item.dart';
 import '../services/sms_service.dart';
-import 'stats_screen.dart';
-import 'settings_screen.dart';
-import 'dart:async';
-// import 'package:share_plus/share_plus.dart'; // optional - user can add if needed
+import '../widgets/sms_paste_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -174,18 +177,22 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('SMS Expense Tracker'),
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const StatsScreen()));
+            onPressed: () async {
+              await stats.loadLibrary(); // load dynamically
+              if (!mounted) return;
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => stats.StatsScreen()),
+              );
             },
             icon: const Icon(Icons.bar_chart),
           ),
           IconButton(
-            onPressed: () {
+            onPressed: () async {
+              await settings.loadLibrary(); // load dynamically
+              if (!mounted) return;
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => SettingsScreen(
+                  builder: (_) => settings.SettingsScreen(
                     onClear: () async {
                       await HiveHelper.deleteAll();
                       await _load();
@@ -408,6 +415,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Icon(Icons.refresh),
               ),
             ),
+          // Paste SMS button - available on all platforms
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: FloatingActionButton.small(
+              heroTag: 'paste_sms',
+              onPressed: () async {
+                final result = await showDialog<TransactionItem?>(
+                  context: context,
+                  builder: (ctx) => SmsPasteDialog(
+                    onTransactionParsed: (transaction) async {
+                      await HiveHelper.insertTransaction(transaction);
+                      await _load();
+                    },
+                  ),
+                );
+                if (result != null) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Transaction added from SMS'),
+                    ),
+                  );
+                }
+              },
+              tooltip: 'Paste SMS',
+              child: const Icon(Icons.paste),
+            ),
+          ),
           // Use an extended FAB on non-Android platforms for better discoverability
           if (!_isAndroid)
             FloatingActionButton.extended(

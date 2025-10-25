@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 import '../models/transaction_item.dart';
 
 class NotificationService {
@@ -14,18 +15,33 @@ class NotificationService {
   static Future<void> initialize() async {
     if (_initialized) return;
 
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+    // Skip initialization on Windows platform
+    if (Platform.isWindows) {
+      _initialized = true;
+      return;
+    }
 
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
+    // Ensure we're on a supported platform
+    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS && !Platform.isLinux) {
+      _initialized = true;
+      return;
+    }
+
+    final initSettings = InitializationSettings(
+      android: const AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: const DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      ),
+      macOS: const DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      ),
+      linux: const LinuxInitializationSettings(
+        defaultActionName: 'Open notification',
+      ),
     );
 
     await _notifications.initialize(
@@ -59,31 +75,58 @@ class NotificationService {
   ) async {
     if (!_initialized) await initialize();
 
+    // Skip showing notifications on Windows
+    if (Platform.isWindows) {
+      return;
+    }
+
     final amount = transaction.amount.toStringAsFixed(2);
     final title = transaction.isDebit
         ? 'New Expense Detected'
         : 'New Credit Detected';
     final body = '₹$amount - ${transaction.category} (${transaction.source})';
 
-    final androidDetails = AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-      channelDescription: _channelDescription,
-      importance: Importance.high,
-      priority: Priority.high,
-      ticker: 'New transaction',
-    );
+    NotificationDetails? details;
+    
+    if (Platform.isAndroid) {
+      final androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        ticker: 'New transaction',
+      );
+      details = NotificationDetails(android: androidDetails);
+    } else if (Platform.isIOS) {
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+      details = const NotificationDetails(iOS: iosDetails);
+    } else if (Platform.isMacOS) {
+      const macOSDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+      details = const NotificationDetails(macOS: macOSDetails);
+    } else if (Platform.isLinux) {
+      const linuxDetails = LinuxNotificationDetails(
+        actions: [
+          LinuxNotificationAction(
+            key: 'view',
+            label: 'View Transaction',
+          ),
+        ],
+        urgency: LinuxNotificationUrgency.normal,
+      );
+      details = const NotificationDetails(linux: linuxDetails);
+    }
 
-    final iosDetails = const DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+    // If we couldn't create platform-specific details, return
+    if (details == null) return;
 
     await _notifications.show(
       transaction.hashCode, // Use hash as notification ID

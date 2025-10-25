@@ -79,28 +79,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: const Text('Disable'),
                 ),
               ),
-            SwitchListTile(
-              title: const Text('Background SMS Processing'),
-              subtitle: const Text(
-                'Automatically process SMS messages even when app is closed',
-              ),
-              value: _backgroundServiceEnabled,
-              onChanged: (value) async {
-                // Store context before async gap
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                await SettingsManager.setBackgroundServiceEnabled(value);
-                if (!mounted) return;
+            // Only show SMS processing switch on Android
+            if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+              SwitchListTile(
+                title: const Text('Background SMS Processing'),
+                subtitle: const Text(
+                  'Automatically process SMS messages even when app is closed',
+                ),
+                value: _backgroundServiceEnabled,
+                onChanged: (value) async {
+                  // Store context before async gap
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                  await SettingsManager.setBackgroundServiceEnabled(value);
+                  if (!mounted) return;
 
-                setState(() {
-                  _backgroundServiceEnabled = value;
-                });
-                // Only initialize background service on Android
-                if (value &&
-                    !kIsWeb &&
-                    defaultTargetPlatform == TargetPlatform.android) {
-                  await BackgroundSmsService.initialize();
-                }
-                if (!mounted) return;
+                  setState(() {
+                    _backgroundServiceEnabled = value;
+                  });
+                  // Initialize background service
+                  if (value) {
+                    await BackgroundSmsService.initialize();
+                  }
+                  if (!mounted) return;
 
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
